@@ -2,7 +2,9 @@ package com.example.taskproject.controllers;
 
 import com.example.taskproject.services.CommentService;
 import com.example.taskproject.services.DTO.CommentDto;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,34 +20,31 @@ public class CommentController {
 
     // создание комментария
     @PostMapping("/create")
-    public ResponseEntity<CommentDto> createComment(@RequestBody CommentDto commentDto) {
-        commentService.addComment(commentDto);
-        return ResponseEntity.ok(commentDto);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> createComment(@RequestBody @Valid CommentDto commentDto) {
+        commentService.createComment(commentDto);
+        return ResponseEntity.ok("Comment created successfully!");
     }
 
     // обновления комментария
     @PutMapping("/{id}/update")
-    public ResponseEntity<CommentDto> updateComment(@PathVariable long id, @RequestBody CommentDto commentDto) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateComment(@PathVariable long id, @RequestBody @Valid CommentDto commentDto) {
         commentService.updateComment(id, commentDto);
-        return ResponseEntity.ok(commentDto);
+        return ResponseEntity.ok("Comment updated successfully!");
     }
 
     // удаление комментария
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<Void> deleteComment(@PathVariable long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteComment(@PathVariable long id) {
         commentService.deleteComment(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Comment deleted successfully!");
     }
 
     // получения комментария по id
     @GetMapping("/{id}")
     public ResponseEntity<CommentDto> getCommentById(@PathVariable long id) {
         return ResponseEntity.ok(commentService.getCommentById(id));
-    }
-
-    // получение всех комментариев указанной задачи
-    @GetMapping("/byTask/{id}")
-    public ResponseEntity<List<CommentDto>> getCommentsByTaskId(@PathVariable long id) {
-        return ResponseEntity.ok(commentService.getAllCommentsByTaskId(id));
     }
 }

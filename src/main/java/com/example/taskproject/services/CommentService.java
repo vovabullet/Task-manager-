@@ -1,13 +1,17 @@
 package com.example.taskproject.services;
 
 import com.example.taskproject.services.DTO.CommentDto;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
 public interface CommentService {
 
+    // создание комментария
+    void createComment(CommentDto commentDto);
+
     // добавление комментария
-    void addComment(CommentDto commentDto);
+    void addComment(Long taskId, String content, Authentication authentication);
 
     // получение комментария по id
     CommentDto getCommentById(Long id);

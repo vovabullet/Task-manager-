@@ -2,40 +2,54 @@ package com.example.taskproject.controllers;
 
 import com.example.taskproject.enums.TaskPriority;
 import com.example.taskproject.enums.TaskStatus;
+import com.example.taskproject.services.CommentService;
+import com.example.taskproject.services.DTO.CommentDto;
 import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.TaskService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
 
     private final TaskService taskService;
+    private final CommentService commentService;
 
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, CommentService commentService) {
         this.taskService = taskService;
+        this.commentService = commentService;
     }
 
     // создание задачи
     @PostMapping("/create")
-    public ResponseEntity<TaskDto> createTask(@RequestBody TaskDto taskDto) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> createTask(@RequestBody @Valid TaskDto taskDto) {
         taskService.createTask(taskDto);
-        return ResponseEntity.ok(taskDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Task created successfully!");
     }
 
     // обновление задачи
     @PutMapping("/{id}/update")
-    public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @RequestBody TaskDto taskDto) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateTask(@PathVariable Long id, @RequestBody @Valid TaskDto taskDto) {
         taskService.updateTask(id, taskDto);
-        return ResponseEntity.ok(taskDto);
+        return ResponseEntity.ok("Task updated successfully!");
     }
 
     // удаление задачи
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<TaskDto> deleteTask(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Task deleted successfully!");
     }
 
     // получение задачи по id
@@ -45,24 +59,41 @@ public class TaskController {
     }
 
     // обновление статуса задачи
-    @PutMapping("/{id}/statusUpdate")
-    public ResponseEntity<TaskDto> updateTaskStatus(@PathVariable Long id, @RequestParam TaskStatus status) {
+    @PutMapping("/{id}/status")
+    @PreAuthorize("@accessService.canChangeTask(#id, authentication)")
+    public ResponseEntity<String> updateTaskStatus(@PathVariable Long id, @RequestParam @Valid TaskStatus status) {
         taskService.updateTaskStatus(id, status);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Task status updated successfully!");
     }
     
     // обновление приоритета задач
-    @PutMapping("/{id}/priorityUpdate")
-    public ResponseEntity<TaskDto> updateTaskPriority(@PathVariable Long id, @RequestParam TaskPriority priority) {
+    @PutMapping("/{id}/priority")
+    @PreAuthorize("@accessService.canChangeTask(#id, authentication)")
+    public ResponseEntity<String> updateTaskPriority(@PathVariable Long id, @RequestParam @Valid TaskPriority priority) {
         taskService.updateTaskPriority(id, priority);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Task priority updated successfully!");
     }
     
     // назначение задачи пользователю
     @PutMapping("/{taskId}/assign")
-    public ResponseEntity<TaskDto> updateTaskAssign(@PathVariable Long taskId, @RequestParam Long assigneeId) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateTaskAssign(@PathVariable Long taskId, @RequestParam Long assigneeId) {
         taskService.assignTaskToUser(taskId, assigneeId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("User assigned successfully!");
+    }
+
+    // создание комментария к задаче
+    @PostMapping("/{id}/comments")
+    @PreAuthorize("@accessService.canChangeTask(#id, authentication)")
+    public ResponseEntity<String> addComment(@PathVariable Long id, @RequestBody @Valid @NotBlank String content, Authentication authentication) {
+        commentService.addComment(id, content, authentication);
+        return ResponseEntity.ok("Comment added successfully!");
+    }
+
+    // получение всех комментариев указанной задачи
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<CommentDto>> getCommentsByTaskId(@PathVariable long id) {
+        return ResponseEntity.ok(commentService.getAllCommentsByTaskId(id));
     }
 
 }

@@ -40,6 +40,7 @@ public class TaskServiceImpl implements TaskService {
     // создание задачи
     @Override
     public void createTask(TaskDto taskDto) {
+        // проверка, является ли автор 
         // создание новой задачи
         Task task = new Task();
         // передача данных из полученного DTO в новую задачу

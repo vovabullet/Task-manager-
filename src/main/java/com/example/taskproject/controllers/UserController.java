@@ -4,7 +4,10 @@ import com.example.taskproject.enums.UserRole;
 import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.DTO.UserDto;
 import com.example.taskproject.services.UserService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,23 +23,26 @@ public class UserController {
 
     // создание пользователя
     @PostMapping("/create")
-    public ResponseEntity<UserDto> createUser (@RequestBody UserDto userDto) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> createUser (@RequestBody @Valid UserDto userDto) {
         userService.createUser(userDto);
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok("User created successfully!");
     }
 
     // обновление пользователя
     @PutMapping("/{id}/update")
-    public ResponseEntity<UserDto> updateUser (@PathVariable Long id, @RequestBody UserDto userDto) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateUser (@PathVariable Long id, @RequestBody @Valid UserDto userDto) {
         userService.updateUser(id, userDto);
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok("User updated successfully!");
     }
 
     // удаление пользователя
     @DeleteMapping("/{id}/delete")
-    public ResponseEntity<UserDto> deleteUser (@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteUser (@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("User deleted successfully!");
     }
 
     // получения пользователя по id
@@ -47,7 +53,7 @@ public class UserController {
 
     // получения пользователя по email
     @GetMapping("/email")
-    public ResponseEntity<UserDto> getUserByEmail (@RequestParam String email) {
+    public ResponseEntity<UserDto> getUserByEmail (@RequestParam @Valid @NotBlank String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
@@ -70,9 +76,10 @@ public class UserController {
     }
 
     // изменение роли пользователя
-    @PutMapping("/{id}/changeRole")
-    public ResponseEntity<Void> updateUserRole (@PathVariable Long id, @RequestParam UserRole role) {
+    @PutMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateUserRole (@PathVariable Long id, @RequestParam UserRole role) {
         userService.changeUserRole(id, role);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("User role updated successfully!");
     }
 }

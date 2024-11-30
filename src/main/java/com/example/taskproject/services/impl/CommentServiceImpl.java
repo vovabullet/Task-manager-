@@ -11,6 +11,7 @@ import com.example.taskproject.services.DTO.CommentDto;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class CommentServiceImpl implements CommentService {
 
     // добавление комментария
     @Override
-    public void addComment(CommentDto commentDto) {
+    public void createComment(CommentDto commentDto) {
         // создание нового комментария
         Comment comment = new Comment();
         // передача данных из полученного DTO в новую задачу
@@ -50,6 +51,22 @@ public class CommentServiceImpl implements CommentService {
 
         // логирование успеха
         logger.info("Comment with ID {} added successfully", savedComment.getId());
+    }
+
+    @Override
+    public void addComment(Long taskId, String content, Authentication authentication) {
+        // получение текущего пользователя
+        String currentUserEmail = authentication.getName();
+
+        // создание нового комментария
+        Comment comment = new Comment();
+        comment.setContent(content);
+        comment.setTask(taskRepository.findById(taskId).orElseThrow(() -> new EntityNotFoundException("Task with ID " + taskId + " not found")));
+        comment.setAuthor(userRepository.findByEmail(currentUserEmail).orElseThrow(() -> new EntityNotFoundException("User with email " + currentUserEmail + " not found")));
+
+        // Сохраняем комментарий
+        commentRepository.save(comment);
+        logger.info("Comment added successfully by user '{}' to task with ID {}", currentUserEmail, taskId);
     }
 
     // обновление комментария
