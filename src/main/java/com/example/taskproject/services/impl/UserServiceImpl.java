@@ -4,18 +4,19 @@ import com.example.taskproject.enums.TaskStatus;
 import com.example.taskproject.enums.UserRole;
 import com.example.taskproject.models.Task;
 import com.example.taskproject.models.User;
-import com.example.taskproject.repositories.CommentRepository;
 import com.example.taskproject.repositories.TaskRepository;
 import com.example.taskproject.repositories.UserRepository;
 import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.DTO.UserDto;
 import com.example.taskproject.services.UserService;
-import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -103,40 +104,33 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<TaskDto> getTasksByAuthor(Long userId) {
+    public Page<TaskDto> getTasksByAuthor(Long userId, int page, int size) {
         // получаю пользователя
         User user = findUserById(userId);
+
+        // настройка пагинации и сортировки
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "priority"));
 
         // получаю список задач, где указанный пользователь является автором
-        List<Task> tasks = taskRepository.findAllByAuthorId(user.getId());
+        Page<Task> tasks = taskRepository.findAllByAuthorId(userId, pageable);
 
         // преобразование сущностей в DTO с использованием Stream API
-        return tasks.stream()
-                .map(task -> modelMapper.map(task, TaskDto.class))
-                .collect(Collectors.toList());
+        return tasks.map(task -> modelMapper.map(task, TaskDto.class));
     }
 
     @Override
-    public List<TaskDto> getTasksByAssignee(Long userId) {
+    public Page<TaskDto> getTasksByAssignee(Long userId, int page, int size) {
         // получаю пользователя
         User user = findUserById(userId);
 
+        // настройка пагинации и сортировки
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "priority"));
+
         // получаю список задач, где указанный пользователь является исполнителем
-        List<Task> tasks = taskRepository.findAllByAssigneeId(user.getId());
+        Page<Task> tasks = taskRepository.findAllByAssigneeId(userId, pageable);
 
         // преобразование сущностей в DTO с использованием Stream API
-        return tasks.stream()
-                .map(task -> modelMapper.map(task, TaskDto.class))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public int getActiveTasksCount(Long userId) {
-        // метод должен возвращать кол-во АКТИВНЫХ задач, по этому, с помощью stream(), подсчитывается кол-во задач,
-        // где указанный пользователь является исполнителем, и статус задачи - В_ПРОГРЕССЕ.
-        return (int) taskRepository.findAllByAssigneeId(userId).stream()
-                .filter(task -> task.getStatus().equals(TaskStatus.IN_PROGRESS))
-                .count();
+        return tasks.map(task -> modelMapper.map(task, TaskDto.class));
     }
 
     @Override

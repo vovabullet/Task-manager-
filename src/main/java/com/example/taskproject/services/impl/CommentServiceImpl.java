@@ -11,6 +11,9 @@ import com.example.taskproject.services.DTO.CommentDto;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -109,14 +112,18 @@ public class CommentServiceImpl implements CommentService {
 
     // получение всех комментариев указанной задачи
     @Override
-    public List<CommentDto> getAllCommentsByTaskId(Long taskId) {
+    public Page<CommentDto> getAllCommentsByTaskId(Long taskId, int page, int size) {
+        // получение задачи
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new EntityNotFoundException("Task not found"));
+
+        // настройка пагинации
+        Pageable pageable = PageRequest.of(page, size);
+
         // получение списка комментариев по ID задачи
-        List<Comment> comments = commentRepository.findAllByTaskId(taskId);
+        Page<Comment> comments = commentRepository.findAllByTaskId(taskId, pageable);
 
         // преобразование сущностей в DTO с использованием Stream API
-        return comments.stream()
-                .map(comment -> modelMapper.map(comment, CommentDto.class))
-                .collect(Collectors.toList());
+        return comments.map(comment -> modelMapper.map(comment, CommentDto.class));
     }
 
 

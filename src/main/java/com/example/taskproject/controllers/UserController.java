@@ -6,6 +6,7 @@ import com.example.taskproject.services.DTO.UserDto;
 import com.example.taskproject.services.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -57,22 +58,22 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
-    // получение кол-ва активных задач пользователя
-    @GetMapping("{id}/tasks")
-    public ResponseEntity<Integer> getActiveTasksCount (@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getActiveTasksCount(id));
-    }
-
     // получение задач, созданных пользователем
     @GetMapping("/{id}/tasks/author")
-    public ResponseEntity<List<TaskDto>> getTasksByAuthor (@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getTasksByAuthor(id));
+    public ResponseEntity<Page<TaskDto>> getTasksByAuthor (
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(userService.getTasksByAuthor(id, page, size));
     }
 
     // получение задач, назначенных пользователю
     @GetMapping("/{id}/tasks/assignee")
-    public ResponseEntity<List<TaskDto>> getTasksByAssignee (@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getTasksByAssignee(id));
+    public ResponseEntity<Page<TaskDto>> getTasksByAssignee (
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(userService.getTasksByAssignee(id, page, size));
     }
 
     // изменение роли пользователя

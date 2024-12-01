@@ -8,6 +8,7 @@ import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.TaskService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -92,8 +93,11 @@ public class TaskController {
 
     // получение всех комментариев указанной задачи
     @GetMapping("/{id}/comments")
-    public ResponseEntity<List<CommentDto>> getCommentsByTaskId(@PathVariable long id) {
-        return ResponseEntity.ok(commentService.getAllCommentsByTaskId(id));
+    public ResponseEntity<Page<CommentDto>> getCommentsByTaskId(
+            @PathVariable long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(commentService.getAllCommentsByTaskId(id, page, size));
     }
 
 }
