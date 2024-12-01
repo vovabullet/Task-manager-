@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/auth")
@@ -25,6 +27,9 @@ public class AuthController {
     }
 
     // авторизация
+    @Operation(summary = "Authorization", description = "Authorization by email and password")
+    @ApiResponse(responseCode = "403", description = "Email or password is incorrect")
+    @ApiResponse(responseCode = "200", description = "Authorization successful")
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody AuthRequest authRequest) {
         Authentication authentication = authenticationManager.authenticate(

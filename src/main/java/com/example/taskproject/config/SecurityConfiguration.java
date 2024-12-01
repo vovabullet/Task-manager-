@@ -1,7 +1,6 @@
 package com.example.taskproject.config;
 
 import com.example.taskproject.utils.JwtAuthenticationFilter;
-import com.example.taskproject.utils.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -36,8 +34,12 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable) // CSRF отключается для REST API
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // доступ к маршрутам аутентификации открыт для всех
-                        .requestMatchers("/admin/**").hasRole("ADMIN") // доступ к маршрутам /admin только для ADMIN
-                        .requestMatchers("/users/**").hasAnyRole("USER", "ADMIN") // Доступ к маршрутам пользователей
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs.yaml"
+                        ).permitAll() // доступ к Swagger UI открыт для всех
                         .anyRequest().authenticated() // остальные запросы требуют авторизации
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // без сессий, так как REST API с JWT не использует сессии.
