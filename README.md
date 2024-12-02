@@ -69,8 +69,6 @@ volumes:
 
 Проект использует настройки подключения, указанные в `src/main/resources/application.properties`.
 
-#### Пример:
-
 ``` properties
 # DB connect  
 spring.datasource.url=jdbc:postgresql://localhost:5432/taskdb  
