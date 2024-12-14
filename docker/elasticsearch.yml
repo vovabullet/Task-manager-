@@ -1,0 +1,11 @@
+# Безопасность отключена для локальной разработки
+xpack.security.enabled: false
+xpack.security.http.ssl.enabled: false
+
+
+# Запуск в однопоточном режиме
+discovery.type: single-node
+
+# Сетевые настройки
+network.host: 0.0.0.0
+http.port: 9200

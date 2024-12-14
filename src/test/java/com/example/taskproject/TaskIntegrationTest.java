@@ -1,4 +1,4 @@
-package com.example.taskproject;
+package com.example.taskproject.integrationTests;
 
 import com.example.taskproject.enums.TaskPriority;
 import com.example.taskproject.enums.TaskStatus;
@@ -84,4 +84,6 @@ public class TaskIntegrationTest {
         assertEquals("This is the second comment", comments.get(1).getContent());
 
     }
+
+
 }
