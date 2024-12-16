@@ -1,6 +1,5 @@
 package com.example.taskproject.services.impl;
 
-import com.example.taskproject.enums.TaskStatus;
 import com.example.taskproject.enums.UserRole;
 import com.example.taskproject.models.Task;
 import com.example.taskproject.models.User;
@@ -13,15 +12,15 @@ import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -45,6 +44,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", allEntries = true)
     public void createUser(UserDto userDto) {
         // создание пользователя
         User user = new User();
@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", allEntries = true)
     public void updateUser(Long userId, UserDto userDto) {
         // получаю пользователя
         User user = findUserById(userId);
@@ -78,6 +79,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", key = "#userId")
     public void deleteUser(Long userId) {
         // получаю пользователя
         User user = findUserById(userId);
@@ -90,7 +92,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    // @Cacheable(value = "users", key = "#userId")
     public UserDto getUserById(Long userId) {
+        // этот лог создан для того, чтобы проверить, кешируется ли метод. Если повторный вызов этого метода вызовет сообщение в консоли - данные не кешируются.
+        logger.info("Fetching user from database for ID: {}", userId);
         return userRepository.findById(userId)
                 .map(user -> modelMapper.map(user, UserDto.class))
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -101,6 +106,18 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .map(user -> modelMapper.map(user, UserDto.class))
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    @Override
+    public User getUserByAuthentication(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalArgumentException("Authentication is invalid or not authenticated");
+        }
+
+        String email = authentication.getName(); // Достаём email из Authentication
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
     @Override

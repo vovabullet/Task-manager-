@@ -1,8 +1,21 @@
-package com.example.taskproject.integrationTests;
+package com.example.taskproject.services;
 
+import com.example.taskproject.enums.UserRole;
+import com.example.taskproject.models.User;
+import com.example.taskproject.repositories.UserRepository;
+import com.example.taskproject.services.DTO.UserDto;
+import com.example.taskproject.services.impl.UserServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -49,7 +62,13 @@ public class UserIntegrationCacheTest {
         System.out.println("Repository query count: " + queryCount);
 
         // Проверка, что результат одинаковый
-        assertEquals(result1, result2);
+
+        //по ссылке на объект
+        //assertEquals(result1, result2);
+
+        //по данным
+        assertThat(result1).usingRecursiveComparison().isEqualTo(result2);
     }
 }
+
 

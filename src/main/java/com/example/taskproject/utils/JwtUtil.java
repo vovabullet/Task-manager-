@@ -5,12 +5,16 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512); // генерация секретного ключа
+    // генерация ключа
+    //private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512); // генерация секретного ключа
+    // фиксированный ключ
+    private final Key secretKey = Keys.hmacShaKeyFor("eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlhdCI6MTczMjg5MzU5NCwiZXhwIjoxNzMyOTI5NTk0fQ.vwQ2XcnvRE00U5IvYigLVdO0wRYGFqlwuREJjJ8ItKf0RMLQvo5P7IbzoZvL1_utaCtNjZtpxXCd6fG9Y61Wcw".getBytes(StandardCharsets.UTF_8));
 
     // генерация JWT
     public String generateToken(String username) {

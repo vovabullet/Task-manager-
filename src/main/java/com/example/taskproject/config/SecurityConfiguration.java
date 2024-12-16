@@ -1,6 +1,7 @@
 package com.example.taskproject.config;
 
 import com.example.taskproject.utils.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +32,15 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .logout(logout -> logout
+                        .logoutUrl("/logout") // URL для logout
+                        .invalidateHttpSession(true) // Удаление сессии
+                        .deleteCookies("JSESSIONID", "yourJwtCookie") // Удаление JWT cookie
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("Выход выполнен успешно");
+                        })
+                )
                 .csrf(AbstractHttpConfigurer::disable) // CSRF отключается для REST API
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // доступ к маршрутам аутентификации открыт для всех
@@ -40,10 +50,12 @@ public class SecurityConfiguration {
                                 "/swagger-ui.html",
                                 "/v3/api-docs.yaml"
                         ).permitAll() // доступ к Swagger UI открыт для всех
-                        .anyRequest().authenticated() // остальные запросы требуют авторизации
+                        .anyRequest()
+                        .authenticated() // остальные запросы требуют авторизации
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // без сессий, так как REST API с JWT не использует сессии.
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // JWT-фильтр
+
 
         return http.build();
     }

@@ -4,6 +4,7 @@ import com.example.taskproject.models.User;
 import com.example.taskproject.repositories.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,11 +32,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // извлечение заголовка Authorization
-        String authorizationHeader = request.getHeader("Authorization");
+        // String authorizationHeader = request.getHeader("Authorization");
+
+        // Извлечение токена из Cookie
+        String token = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
 
         // проверка наличия токена
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7); // убирается префикс "Bearer "
+        if (token != null ) { // && token.startsWith("Bearer ")
+            // String token = authorizationHeader.substring(7); // убирается префикс "Bearer "
             String username = jwtUtil.validateTokenAndGetUsername(token); // проверка токена и получение username
 
             // Установка аутентификации в SecurityContext

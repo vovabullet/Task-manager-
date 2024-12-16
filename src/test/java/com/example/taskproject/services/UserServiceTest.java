@@ -62,4 +62,40 @@ public class UserServiceTest {
         // Проверяем, что маппер был вызван
         verify(modelMapper, times(1)).map(user, UserDto.class);
     }
+
+    /* тест для проверки кеширования. Для такой проверки необходимо использовать интеграционный тест.
+    @Test
+    void testCacheableGetUserById() {
+        // Мокируем User
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("test@example.com");
+        user.setRole(UserRole.ROLE_USER);
+        user.setPassword("password");
+
+        // Настраиваем маппинг User -> UserDto
+        UserDto userDto = new UserDto();
+        userDto.setId(1L);
+        userDto.setEmail("test@example.com");
+        userDto.setRole(UserRole.ROLE_USER);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(modelMapper.map(user, UserDto.class)).thenReturn(userDto);
+
+        // Первый вызов: данные из базы данных
+        UserDto result1 = userServiceImpl.getUserById(1L);
+        assertEquals(userDto, result1);
+
+        // Второй вызов: данные из кэша
+        UserDto result2 = userServiceImpl.getUserById(1L);
+        assertEquals(userDto, result2);
+
+        // Убедимся, что репозиторий был вызван только один раз
+        verify(userRepository, times(1)).findById(1L);
+
+        // Проверяем, что маппер был вызван только один раз
+        verify(modelMapper, times(1)).map(user, UserDto.class);
+    }
+
+     */
 }

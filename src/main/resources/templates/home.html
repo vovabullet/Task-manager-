@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Tasks</title>
+    <style>
+        body {
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+        /* Анимация градиента */
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0 50%;
+            }
+        }
+        .table-responsive {
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        #exit {
+            border: none;
+            padding: 2px 4px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        #exit:hover {
+            opacity: 0.8;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Задачи</h1>
+        <div>
+            <span id="user-email" class="me-3">Пользователь</span>
+            <span id="user-role" class="badge">Роль</span>
+            <button id="exit">Выйти</button>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Название</th>
+                <th>Приоритет</th>
+                <th>Статус</th>
+            </tr>
+            </thead>
+            <tbody id="tasks-body">
+            <!-- Rows will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Pagination buttons will be dynamically added here -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+    let currentPage = 0;
+    const pageSize = 8;
+    let userId; // Переменная для хранения ID пользователя
+
+
+    // Функция для получения авторизованного пользователя
+    async function getUserByAuth() {
+        const response = await fetch(`http://localhost:8080/users/me`);
+        if (response.ok) {
+            return await response.json();
+        } else {
+            console.error(`Ошибка получения пользователя: ${response.status}`);
+            return null;
+        }
+    }
+
+    // Функция для загрузки задач
+    async function loadTasks(page, apiUrl) {
+        try {
+            const response = await fetch(`${apiUrl}?page=${page}&size=${pageSize}`);
+            const data = await response.json();
+
+            // Отображение задач
+            const tasksBody = document.getElementById('tasks-body');
+            tasksBody.innerHTML = '';
+            data.content.forEach(task => {
+                const row = document.createElement('tr');
+                row.style.cursor = 'pointer';
+                row.innerHTML = `
+                        <td>${task.title}</td>
+                        <td><span class="badge bg-${getPriorityColor(task.priority)}">${task.priority}</span></td>
+                        <td>${task.status}</td>
+                    `;
+                row.addEventListener('click', () => {
+                    window.location.href = `/task/${task.id}`;
+                });
+                tasksBody.appendChild(row);
+            });
+
+            // Отображение пагинации
+            renderPagination(data.totalPages, apiUrl);
+        } catch (error) {
+            console.error('Ошибка загрузки задач:', error);
+        }
+    }
+
+    // Функция для отображения пагинации
+    function renderPagination(totalPages, apiUrl) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        for (let i = 0; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#">${i+1}</a>`;
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = i;
+                loadTasks(i, apiUrl);
+            });
+            pagination.appendChild(li);
+        }
+    }
+
+    // Функция для определения цвета приоритета
+    function getPriorityColor(priority) {
+        switch (priority.toLowerCase()) {
+            case 'низкий': return 'success';
+            case 'средний': return 'warning';
+            case 'высокий': return 'danger';
+            default: return 'secondary';
+        }
+    }
+
+    // Загрузка задач при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async  () => {
+        const user = await getUserByAuth();
+        if (user) {
+            userId = user.id; // Сохраняем ID пользователя
+            console.log("ID авторизированного пользователя:", userId);
+
+            const apiUrl = `http://localhost:8080/users/${userId}/tasks/assignee`; // URL для получения задач
+            console.log("URL для задач:", apiUrl);
+
+            const email = user.email;
+            const role = user.role;
+
+            // отображение email и роли пользователя
+            document.getElementById("user-email").textContent = email;
+            let roleBar = document.getElementById("user-role")
+            if (role === "ROLE_USER") {
+                roleBar.textContent = "Пользователь";
+                roleBar.classList.add("bg-primary")
+            } else if (role === "ROLE_ADMIN") {
+                roleBar.textContent = "Администратор";
+                roleBar.classList.add("bg-danger")
+            }
+
+
+            await loadTasks(currentPage, apiUrl); // Загружаем задачи
+        } else {
+            console.error("Ошибка: пользователь не найден или не авторизован.");
+        }
+    });
+
+    // выход из аккаунта
+    document.getElementById('exit').addEventListener('click', async () => {
+        try {
+            const response = await fetch('http://localhost:8080/auth/logout', {
+                method: 'POST',
+                credentials: 'include' // Для отправки cookies
+            });
+
+            if (response.ok) {
+                // Перенаправление на страницу входа
+                window.location.href = '/auth/login';
+            } else {
+                console.error('Ошибка выхода из аккаунта');
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+        }
+    });
+
+
+</script>
+</body>
+</html>

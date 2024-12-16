@@ -1,14 +1,19 @@
 package com.example.taskproject.controllers;
 
 import com.example.taskproject.enums.UserRole;
+import com.example.taskproject.models.User;
 import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.DTO.UserDto;
 import com.example.taskproject.services.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -71,6 +76,14 @@ public class UserController {
     @GetMapping("/email")
     public ResponseEntity<UserDto> getUserByEmail (@RequestParam @Valid @NotBlank String email) {
         return ResponseEntity.ok(userService.getUserByEmail(email));
+    }
+
+    // получение текущего пользователя
+    // TODO добавить остальные аннотации
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        User user = userService.getUserByAuthentication(authentication);
+        return ResponseEntity.ok(user);
     }
 
     // получение задач, созданных пользователем

@@ -125,8 +125,4 @@ public class CommentServiceImpl implements CommentService {
         // преобразование сущностей в DTO с использованием Stream API
         return comments.map(comment -> modelMapper.map(comment, CommentDto.class));
     }
-
-
-
-
 }

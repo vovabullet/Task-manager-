@@ -1,4 +1,4 @@
-package com.example.taskproject.integrationTests;
+package com.example.taskproject;
 
 import com.example.taskproject.enums.TaskPriority;
 import com.example.taskproject.enums.TaskStatus;
