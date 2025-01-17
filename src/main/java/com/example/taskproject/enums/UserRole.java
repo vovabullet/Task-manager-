@@ -8,6 +8,7 @@ public enum UserRole {
         return name();
     }
 
+
     // преобразование строки в enum с обработкой ошибок
     public static UserRole fromString(String role) {
         try {

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Tasks</title>
+    <style>
+        body {
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+        @keyframes gradientAnimation {
+            0% { background-position: 0 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+        .table-responsive {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+        }
+        .btn {
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-edit { background-color: #ffc107; color: white; }
+        .btn-delete { background-color: #dc3545; color: white; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-4">
+
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Управление задачами</h1>
+        <div>
+            <span id="user-email" class="me-3"></span>
+            <span id="user-role" class="badge bg-danger">Администратор</span>
+            <button id="exit">Выйти</button>
+        </div>
+    </div>
+
+    <button class="btn btn-add mb-3" onclick="addTask()">Добавить задачу</button>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Приоритет</th>
+                <th>Статус</th>
+                <th>Исполнитель</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="tasks-body">
+            <!-- Tasks will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Pagination buttons will be dynamically added here -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+    let pageSize = 5;
+    let currentPage = 0;
+
+    async function getUserById(id) {
+        try {
+            const response = await fetch(`http://localhost:8080/users/${id}`);
+            if (response.ok) {
+                return await response.json(); // Возвращаем данные пользователя
+            } else {
+                console.error(`Ошибка получения пользователя: ${response.status}`);
+                return null;
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            return null;
+        }
+    }
+
+
+    async function loadTasks(page, apiUrl) {
+        try {
+            const response = await fetch(`${apiUrl}all?page=${page}&size=${pageSize}`);
+            const data = await response.json();
+
+            const tasksBody = document.getElementById('tasks-body');
+            tasksBody.innerHTML = '';
+
+            for (const task of data.content) {
+                const row = document.createElement('tr');
+
+                // пользователm
+                const assignee = task.assigneeId ? await getUserById(task.assigneeId) : null;
+                const email = assignee ? assignee.email : 'Не назначено';
+
+                row.innerHTML = `
+                <td>${task.id}</td>
+                <td>${task.title}</td>
+                <td><span class="badge bg-${getPriorityColor(task.priority)}">${task.priority}</span></td>
+                <td>${task.status}</td>
+                <td>${email}</td>
+                <td>
+                    <button class="btn btn-edit" onclick="editTask(${task.id})">Редактировать</button>
+                    <button class="btn btn-delete" onclick="deleteTask(${task.id})">Удалить</button>
+                </td>
+            `;
+                tasksBody.appendChild(row);
+            }
+
+            renderTaskPagination(data.totalPages, apiUrl);
+        } catch (error) {
+            console.error('Ошибка загрузки задач:', error);
+        }
+    }
+
+    // Функция для получения цвета приоритета
+    function getPriorityColor(priority) {
+        switch (priority) {
+            case 'LOW': return 'success';
+            case 'MEDIUM': return 'warning';
+            case 'HIGH': return 'danger';
+            default: return 'secondary';
+        }
+    }
+
+    // Функция для отображения пагинации задач
+    function renderTaskPagination(totalPages, apiUrl) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';
+
+        for (let i = 0; i < totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#">${i + 1}</a>`;
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = i;
+                loadTasks(i, apiUrl);
+            });
+            pagination.appendChild(li);
+        }
+    }
+
+    // добавление задачи
+    function addTask() {
+        window.location.href = `/admin/tasks/add`;
+    }
+
+    // изменение задачи
+    function editTask(id) {
+        window.location.href = `/admin/tasks/edit?id=${id}`;
+    }
+
+    // удаление задачи
+    async function deleteTask(id) {
+        const userChoice = confirm(`Вы уверены, что хотите удалить задачу ${id}?`);
+        if (userChoice) {
+            try {
+                const response = await fetch(`http://localhost:8080/tasks/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (response.ok) {
+                    alert("Задача успешно удалена!");
+                    loadTasks(currentPage, `/tasks/`);
+                } else {
+                    console.error(`Ошибка удаления задачи: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Ошибка при выполнении запроса:', error);
+            }
+        }
+    }
+
+    // Функция для получения авторизованного пользователя
+    async function getUserByAuth() {
+        const response = await fetch(`http://localhost:8080/users/me`);
+        if (response.ok) {
+            return await response.json();
+        } else {
+            console.error(`Ошибка получения пользователя: ${response.status}`);
+            return null;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = await getUserByAuth();
+        if (user) {
+            const email = user.email;
+
+            // отображение email пользователя
+            document.getElementById("user-email").textContent = email;
+        } else {
+            console.error("Ошибка: пользователь не найден или не авторизован.");
+        }
+
+        const apiUrl = `http://localhost:8080/tasks/`; // URL для получения задач
+        loadTasks(0, apiUrl);
+    });
+</script>
+</body>
+</html>

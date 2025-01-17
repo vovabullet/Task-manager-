@@ -32,7 +32,7 @@ public class UserController {
     @ApiResponse(responseCode = "201", description = "User created successfully")
     @ApiResponse(responseCode = "403", description = "Access denied")
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> createUser (@RequestBody @Valid UserDto userDto) {
         userService.createUser(userDto);
         return ResponseEntity.ok("User created successfully!");
@@ -120,4 +120,14 @@ public class UserController {
         userService.changeUserRole(id, role);
         return ResponseEntity.ok("User role updated successfully!");
     }
+
+    // получение всех пользователей
+    @GetMapping("/all")
+    //@PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserDto>> getAll (
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(userService.getAll(page, size));
+    }
+
 }

@@ -44,7 +44,7 @@ public class TaskController {
     @Operation(summary = "Update a task", description = "Updates an existing task. Only accessible by ADMIN users.")
     @ApiResponse(responseCode = "200", description = "Task updated successfully")
     @ApiResponse(responseCode = "404", description = "Task not found")
-    @PutMapping("/{id}/update")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> updateTask(@PathVariable Long id, @RequestBody @Valid TaskDto taskDto) {
         taskService.updateTask(id, taskDto);
@@ -55,7 +55,7 @@ public class TaskController {
     @Operation(summary = "Delete a task", description = "Deletes a task by its ID. Only accessible by ADMIN users.")
     @ApiResponse(responseCode = "200", description = "Task deleted successfully")
     @ApiResponse(responseCode = "404", description = "Task not found")
-    @DeleteMapping("/{id}/delete")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
@@ -106,6 +106,7 @@ public class TaskController {
         return ResponseEntity.ok("User assigned successfully!");
     }
 
+    // TODO дублирует контроллер addComment в commentController
     // создание комментария к задаче
     @Operation(summary = "Add a comment to a task", description = "Adds a comment to a task. Accessible by admins and task-related users.")
     @ApiResponse(responseCode = "200", description = "Comment added successfully")
@@ -113,8 +114,8 @@ public class TaskController {
     @ApiResponse(responseCode = "404", description = "Task not found")
     @PostMapping("/{id}/comments")
     @PreAuthorize("@accessService.canChangeTask(#id, authentication)")
-    public ResponseEntity<String> addComment(@PathVariable Long id, @RequestBody @Valid @NotBlank String content, Authentication authentication) {
-        commentService.addComment(id, content, authentication);
+    public ResponseEntity<String> addComment(@PathVariable Long id, @RequestBody @Valid CommentDto commentDto) {
+        commentService.createComment(commentDto);
         return ResponseEntity.ok("Comment added successfully!");
     }
 
@@ -128,5 +129,14 @@ public class TaskController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
         return ResponseEntity.ok(commentService.getAllCommentsByTaskId(id, page, size));
+    }
+
+    // вывод всех задач в БД
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<TaskDto>> getAll (
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(taskService.getAll(page, size));
     }
 }

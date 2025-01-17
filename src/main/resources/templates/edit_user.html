@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать пользователя</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .form-container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-group input::placeholder {
+            color: #d9d9d9;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <h1>Редактировать пользователя</h1>
+    <form id="editUserForm" onsubmit="handleEditUser(event)">
+        <div id="error-message" class="error"></div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Новый пароль (необязательно)</label>
+            <input type="password" id="password" name="password" placeholder="Пароль">
+        </div>
+        <div class="form-group">
+            <label for="role">Роль</label>
+            <select id="role" name="role" required>
+                <option value="ROLE_USER">Пользователь</option>
+                <option value="ROLE_ADMIN">Администратор</option>
+            </select>
+        </div>
+        <button type="submit" class="btn">Сохранить изменения</button>
+    </form>
+</div>
+
+<script>
+    // Получение ID пользователя из URL
+    function getUserIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id');
+    }
+
+    // Загрузка данных пользователя
+    async function loadUserData(userId) {
+        try {
+            const response = await fetch(`/users/${userId}`);
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('email').value = user.email;
+                document.getElementById('role').value = user.role;
+                return user.password;
+            } else {
+                document.getElementById('error-message').textContent = 'Ошибка загрузки данных пользователя.';
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            document.getElementById('error-message').textContent = 'Ошибка сети. Попробуйте позже.';
+        }
+    }
+
+    // Сохранение изменений пользователя
+    async function handleEditUser(event) {
+        event.preventDefault();
+
+        const userId = getUserIdFromURL();
+        const email = document.getElementById('email').value.trim();
+        let password = document.getElementById('password').value.trim();
+        const role = document.getElementById('role').value;
+
+        const errorMessage = document.getElementById('error-message');
+        if (!email || !role) {
+            errorMessage.textContent = 'Email и роль обязательны для заполнения.';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/users/${userId}/update`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password: password || null, role })
+            });
+
+            if (response.ok) {
+                alert('Данные пользователя успешно обновлены!');
+                window.location.href = '/admin/users';
+            } else {
+                errorMessage.textContent = 'Ошибка при сохранении данных пользователя.';
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            errorMessage.textContent = 'Ошибка сети. Попробуйте позже.';
+        }
+    }
+
+    // Инициализация страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        const userId = getUserIdFromURL();
+        if (userId) {
+            loadUserData(userId);
+        } else {
+            document.getElementById('error-message').textContent = 'ID пользователя отсутствует.';
+        }
+    });
+</script>
+</body>
+</html>

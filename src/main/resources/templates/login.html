@@ -111,6 +111,16 @@
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
 
+            async function getUserByEmail() {
+                const response = await fetch(`http://localhost:8080/users/email?email=${email}`);
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    console.error(`Ошибка получения пользователя: ${response.status}`);
+                    return null;
+                }
+            }
+
             try {
                 const response = await fetch('/auth/login', {
                     method: 'POST',
@@ -125,8 +135,16 @@
                     // Сохраняем токен в локальное хранилище (или куда требуется)
                     localStorage.setItem("jwtToken", token);
 
+                    const user = await getUserByEmail();
+                    const role = user.role;
                     // Перенаправляем пользователя на домашнюю страницу
-                    window.location.href = "/home"; // Замените "/home" на ваш URL домашней страницы
+                    if (role === "ROLE_ADMIN") {
+                        window.location.href = `/admin/home`;
+                    } else {
+                        window.location.href = "/home";
+                    }
+
+
                 } else {
                     alert("Ошибка авторизации. Проверьте email и пароль.");
                 }

@@ -13,6 +13,8 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,7 +46,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheEvict(value = "users", allEntries = true)
+
     public void createUser(UserDto userDto) {
         // создание пользователя
         User user = new User();
@@ -61,7 +63,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheEvict(value = "users", allEntries = true)
+    @CachePut(value = "users", key = "#userId")
     public void updateUser(Long userId, UserDto userDto) {
         // получаю пользователя
         User user = findUserById(userId);
@@ -92,10 +94,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    // @Cacheable(value = "users", key = "#userId")
+    @Cacheable(value = "users", key = "#userId")
     public UserDto getUserById(Long userId) {
-        // этот лог создан для того, чтобы проверить, кешируется ли метод. Если повторный вызов этого метода вызовет сообщение в консоли - данные не кешируются.
         logger.info("Fetching user from database for ID: {}", userId);
+        logger.debug("Cache key: users::{}", userId); 
         return userRepository.findById(userId)
                 .map(user -> modelMapper.map(user, UserDto.class))
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -164,5 +166,18 @@ public class UserServiceImpl implements UserService {
         } else {
             logger.warn("User is already assigned to role {}", role);
         }
+    }
+
+    @Override
+    public Page<UserDto> getAll(int page, int size) {
+
+        // настройка пагинации и сортировки
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "role"));
+
+        // получаю список задач, где указанный пользователь является исполнителем
+        Page<User> users = userRepository.findAll(pageable);
+
+        // преобразование сущностей в DTO с использованием Stream API
+        return users.map(user -> modelMapper.map(user, UserDto.class));
     }
 }

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить пользователя</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .form-container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-group input::placeholder {
+            color: #d9d9d9;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <h1>Добавить пользователя</h1>
+    <form id="addUserForm" onsubmit="handleAddUser(event)">
+        <div id="error-message" class="error"></div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" name="password" placeholder="Пароль" required>
+        </div>
+        <div class="form-group">
+            <label for="role">Роль</label>
+            <select id="role" name="role" required>
+                <option value="">Выберите роль</option>
+                <option value="ROLE_USER">Пользователь</option>
+                <option value="ROLE_ADMIN">Администратор</option>
+            </select>
+        </div>
+        <button type="submit" class="btn">Добавить</button>
+    </form>
+</div>
+
+<script>
+    async function handleAddUser(event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const role = document.getElementById("role").value;
+
+        const errorMessage = document.getElementById("error-message");
+
+        // Проверка ввода
+        if (!email || !password || !role) {
+            errorMessage.textContent = "Все поля обязательны для заполнения.";
+            return;
+        }
+
+        if (password.length < 3) {
+            errorMessage.textContent = "Пароль должен быть не менее 3 символов.";
+            return;
+        }
+
+        // Отправка данных на сервер
+        try {
+            const response = await fetch('/users/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role })
+            });
+
+            if (response.ok) {
+                alert("Пользователь успешно добавлен!");
+                window.location.href = '/admin/users'; // Возврат к списку пользователей
+            } else {
+                const errorData = await response.json();
+                errorMessage.textContent = errorData.message || "Ошибка при добавлении пользователя.";
+            }
+        } catch (error) {
+            console.error("Ошибка сети:", error);
+            errorMessage.textContent = "Произошла ошибка. Попробуйте позже.";
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        .table-responsive {
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #exit {
+            border: none;
+            padding: 2px 4px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        #exit:hover {
+            opacity: 0.8;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Панель администратора</h1>
+        <div>
+            <span id="user-email" class="me-3"></span>
+            <span id="user-role" class="badge bg-danger">Администратор</span>
+            <button id="exit">Выйти</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="button-container">
+        <button class="btn" onclick="window.location.href='/admin/tasks'">Список задач</button>
+        <button class="btn" onclick="window.location.href='/admin/users'">Список пользователей</button>
+    </div>
+</div>
+
+<script>
+
+    // Функция для получения авторизованного пользователя
+    async function getUserByAuth() {
+        const response = await fetch(`http://localhost:8080/users/me`);
+        if (response.ok) {
+            return await response.json();
+        } else {
+            console.error(`Ошибка получения пользователя: ${response.status}`);
+            return null;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch(`http://localhost:8080/users/me`);
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById("user-email").textContent = user.email;
+            } else {
+                console.error("Ошибка получения данных пользователя.");
+            }
+        } catch (error) {
+            console.error("Ошибка сети:", error);
+        }
+    });
+
+    document.getElementById('exit').addEventListener('click', async () => {
+        try {
+            const response = await fetch('http://localhost:8080/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                window.location.href = '/auth/login';
+            } else {
+                console.error('Ошибка выхода из аккаунта');
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+        }
+    });
+
+    // Загрузка задач при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async  () => {
+        const user = await getUserByAuth();
+        if (user) {
+            userId = user.id; // Сохраняем ID пользователя
+            console.log("ID авторизированного пользователя:", userId);
+
+            const email = user.email;
+
+            // отображение email и роли пользователя
+            document.getElementById("user-email").textContent = email;
+        } else {
+            console.error("Ошибка: пользователь не найден или не авторизован.");
+        }
+    });
+</script>
+</body>
+</html>

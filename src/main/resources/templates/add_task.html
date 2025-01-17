@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить/Изменить задачу</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Nunito Sans, sans-serif;
+            background: linear-gradient(135deg, rgba(255, 90, 90, 0.51), rgba(22, 220, 255, 0.51));
+            background-size: 1000%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .form-container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            height: 100px;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <h1 id="form-title">Добавить задачу</h1>
+    <form id="taskForm" onsubmit="handleSubmit(event)">
+        <div id="error-message" class="error"></div>
+        <div class="form-group">
+            <label for="title">Название</label>
+            <input type="text" id="title" name="title" placeholder="Введите название задачи" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Описание</label>
+            <textarea id="description" name="description" placeholder="Введите описание задачи"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="priority">Приоритет</label>
+            <select id="priority" name="priority" required>
+                <option value="LOW">Низкий</option>
+                <option value="MEDIUM">Средний</option>
+                <option value="HIGH">Высокий</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Статус</label>
+            <select id="status" name="status" required>
+                <option value="PENDING">Создано</option>
+                <option value="IN_PROGRESS">В процессе</option>
+                <option value="COMPLETED">Выполнено</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="assignee">Исполнитель</label>
+            <select id="assignee" name="assignee">
+                <option value="">Выберите исполнителя</option>
+            </select>
+        </div>
+        <button type="submit" class="btn">Сохранить</button>
+    </form>
+</div>
+
+<script>
+    const userId = getUserIdFromURL();
+    let assignedUserId = null; // ID исполнителя из задачи
+
+    // Получение ID задачи из URL
+    function getUserIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id');
+    }
+
+    // Загрузка данных задачи для редактирования
+    async function loadTaskData(taskId) {
+        try {
+            const response = await fetch(`/tasks/${taskId}`);
+            if (response.ok) {
+                const task = await response.json();
+                document.getElementById('title').value = task.title;
+                document.getElementById('description').value = task.description;
+                document.getElementById('priority').value = task.priority;
+                document.getElementById('status').value = task.status;
+
+                // Сохраняем ID исполнителя
+                assignedUserId = task.assigneeId ? task.assigneeId.id : null;
+
+                document.getElementById('form-title').textContent = "Изменить задачу";
+
+                console.log(`Assigned User ID: ${assignedUserId}`);
+            } else {
+                document.getElementById('error-message').textContent = 'Ошибка загрузки данных задачи.';
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            document.getElementById('error-message').textContent = 'Ошибка сети. Попробуйте позже.';
+        }
+    }
+    
+    // Загрузка списка пользователей для выбора исполнителя
+    async function loadUsers() {
+        try {
+            const response = await fetch(`/users/all`);
+            if (response.ok) {
+                const data = await response.json();
+                const users = data.content || data; // массив или поле `content`
+
+                const assigneeSelect = document.getElementById('assignee');
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.email;
+                    assigneeSelect.appendChild(option);
+
+                    // Устанавливаем выбранного исполнителя
+                    if (assignedUserId !== null && parseInt(user.id) === parseInt(assignedUserId)) {
+                        option.selected = true;
+                    }
+                });
+            } else {
+                console.error('Ошибка загрузки списка пользователей.');
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+        }
+    }
+
+    // Обработка отправки формы
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const priority = document.getElementById('priority').value;
+        const status = document.getElementById('status').value;
+        const assigneeId = document.getElementById('assignee').value || null;
+
+        if (!title) {
+            document.getElementById('error-message').textContent = 'Название задачи обязательно.';
+            return;
+        }
+
+        // Добавляем автора в payload
+        const payload = { title, description, priority, status, assigneeId, authorId };
+
+        try {
+            const url = userId ? `/tasks/${userId}` : '/tasks/create';
+            const method = userId ? 'PUT' : 'POST';
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert('Задача успешно сохранена!');
+                window.location.href = '/admin/tasks';
+            } else {
+                document.getElementById('error-message').textContent = 'Ошибка сохранения задачи.';
+            }
+        } catch (error) {
+            console.error('Ошибка сети:', error);
+            document.getElementById('error-message').textContent = 'Ошибка сети. Попробуйте позже.';
+        }
+    }
+
+    let authorId;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Загрузка данных авторизованного пользователя
+            const response = await fetch('http://localhost:8080/users/me');
+            if (response.ok) {
+                const data = await response.json();
+                authorId = data.id; // ID автора
+            } else {
+                console.error(`Ошибка получения пользователя: ${response.status}`);
+                authorId = null;
+            }
+        } catch (error) {
+            console.error(`Ошибка при выполнении запроса: ${error.message}`);
+            authorId = null;
+        }
+
+        if (userId) {
+            await loadTaskData(userId); // данные задачи
+        }
+
+        await loadUsers(); //  пользователи
+    });
+
+
+
+</script>
+</body>
+</html>

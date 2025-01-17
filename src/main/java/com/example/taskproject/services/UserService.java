@@ -21,4 +21,6 @@ public interface UserService {
     Page<TaskDto> getTasksByAuthor(Long userId, int page, int size);
     Page<TaskDto> getTasksByAssignee(Long userId, int page, int size);
     void changeUserRole(Long userId, UserRole role);
+
+    Page<UserDto> getAll(int page, int size);
 }

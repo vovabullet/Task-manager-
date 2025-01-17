@@ -2,16 +2,21 @@ package com.example.taskproject.services.impl;
 
 import com.example.taskproject.enums.TaskPriority;
 import com.example.taskproject.enums.TaskStatus;
+import com.example.taskproject.models.Comment;
 import com.example.taskproject.models.Task;
 import com.example.taskproject.models.User;
 import com.example.taskproject.repositories.CommentRepository;
 import com.example.taskproject.repositories.TaskRepository;
 import com.example.taskproject.repositories.UserRepository;
+import com.example.taskproject.services.DTO.CommentDto;
 import com.example.taskproject.services.DTO.TaskDto;
 import com.example.taskproject.services.TaskService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,5 +154,17 @@ public class TaskServiceImpl implements TaskService {
         } else {
             logger.warn("Task with ID {} '{}' already has assigned to user '{}'", taskId, task.getTitle(), userId);
         }
+    }
+
+    @Override
+    public Page<TaskDto> getAll(int page, int size) {
+        // настройка пагинации
+        Pageable pageable = PageRequest.of(page, size);
+
+        // получение списка комментариев по ID задачи
+        Page<Task> tasks = taskRepository.findAll(pageable);
+
+        // преобразование сущностей в DTO с использованием Stream API
+        return tasks.map(task -> modelMapper.map(task, TaskDto.class));
     }
 }

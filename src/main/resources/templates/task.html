@@ -76,6 +76,18 @@
             </tbody>
         </table>
 
+        <!-- Add Comment Form -->
+        <div class="mb-4" style=" margin-left: 10px; margin-right: 10px;">
+            <h4>Добавить комментарий</h4>
+            <form id="add-comment-form">
+                <div class="mb-3">
+                    <textarea id="new-comment" class="form-control" rows="3" style="resize: none;" placeholder="Напишите комментарий..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить</button>
+            </form>
+        </div>
+
+
         <!-- Пагинация -->
         <nav>
             <ul class="pagination" id="comments-pagination">
@@ -88,7 +100,7 @@
 <script>
     let taskId;
     let currentPage = 0;
-    const pageSize = 5;
+    const pageSize = 3;
     let userId; // Переменная для хранения ID пользователя
 
 
@@ -132,19 +144,22 @@
         }
     }
 
+    // TODO добавить цветное и понятное отображения статуса, приоритета и фона у email пользователя, как на плашке в шапке
+    // загрузка комментариев
     async function loadComments(taskId, page) {
         try {
-            // Запрос комментариев для задачи
             const response = await fetch(`http://localhost:8080/tasks/${taskId}/comments?page=${page}&size=${pageSize}`);
             const data = await response.json();
 
             const commentsBody = document.getElementById('comments-body');
             commentsBody.innerHTML = '';
 
-            // Асинхронно преобразуем ID авторов в их email
+            // Обрабатываем комментарии
             for (const comment of data.content) {
-                const authorEmail = await getUserEmail(comment.authorId); // Получаем email пользователя по ID
-
+                const authorEmail = await getUserEmail(comment.authorId);
+                console.log(data);
+                console.log(data.content);
+                console.log(data.content.content);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                 <td>${authorEmail}</td>
@@ -153,13 +168,11 @@
                 commentsBody.appendChild(row);
             }
 
-            // Отображение пагинации
             renderPagination(data.totalPages, taskId);
         } catch (error) {
             console.error('Ошибка загрузки комментариев:', error);
         }
     }
-
 
     // получение email пользователя по ID
     async function getUserEmail(userId) {
@@ -178,7 +191,7 @@
         }
     }
 
-
+    // пагинация
     function renderPagination(totalPages, taskId) {
         const pagination = document.getElementById('comments-pagination');
         pagination.innerHTML = '';
@@ -195,6 +208,49 @@
             pagination.appendChild(li);
         }
     }
+
+    // Функция для добавления нового комментария
+    async function addComment(taskId, content) {
+        try {
+            const response = await fetch(`http://localhost:8080/tasks/${taskId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: content,
+                    taskId: taskId,
+                    authorId: userId
+                }),
+            });
+
+            if (response.ok) {
+                document.getElementById('new-comment').value = ''; // Очистка поля ввода
+                await loadComments(taskId, currentPage); // Обновление списка комментариев
+            } else {
+                console.error('Ошибка добавления комментария:', response.status);
+            }
+        } catch (error) {
+            console.error('Ошибка сети при добавлении комментария:', error);
+        }
+    }
+
+    // Обработчик отправки формы добавления комментария
+    document.getElementById('add-comment-form').addEventListener('submit', async (event) => {
+        event.preventDefault(); // Остановка стандартного поведения формы
+        const content = document.getElementById('new-comment').value.trim();
+
+        if (content) {
+            if (taskId) {
+                await addComment(taskId, content); // Передаём ID задачи и текст комментария
+            } else {
+                console.error('Не удалось получить ID задачи.');
+            }
+        } else {
+            alert('Комментарий не может быть пустым.');
+        }
+    });
+
 
 
     document.addEventListener("DOMContentLoaded", async () => {
